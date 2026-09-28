@@ -37,19 +37,25 @@ public class HouseholdService {
         Installation installation = installationRepository.findById(household.getInstallation().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Installation not found with id: " + household.getInstallation().getId()));
         household.setInstallation(installation);
+
+        validateAllocatedKwh(household, null, installation);
+
         return householdRepository.save(household);
     }
 
     public Household updateHousehold(Long id, Household updatedHousehold) {
         Household existing = getHouseholdById(id);
         existing.setHouseholdName(updatedHousehold.getHouseholdName());
-        existing.setAllocationRatio(updatedHousehold.getAllocationRatio());
 
+        Installation installation = existing.getInstallation();
         if (updatedHousehold.getInstallation() != null && updatedHousehold.getInstallation().getId() != null) {
-            Installation installation = installationRepository.findById(updatedHousehold.getInstallation().getId())
+            installation = installationRepository.findById(updatedHousehold.getInstallation().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Installation not found with id: " + updatedHousehold.getInstallation().getId()));
             existing.setInstallation(installation);
         }
+
+        existing.setAllocatedKwh(updatedHousehold.getAllocatedKwh());
+        validateAllocatedKwh(existing, existing.getId(), installation);
 
         return householdRepository.save(existing);
     }
@@ -57,5 +63,33 @@ public class HouseholdService {
     public void deleteHousehold(Long id) {
         Household existing = getHouseholdById(id);
         householdRepository.delete(existing);
+    }
+
+    private void validateAllocatedKwh(Household household, Long currentHouseholdId, Installation installation) {
+        if (household.getAllocatedKwh() == null || household.getAllocatedKwh() <= 0) {
+            throw new BadRequestException("Allocated kWh must be greater than 0");
+        }
+
+        double requestedKwh = household.getAllocatedKwh();
+        double installationCapacity = installation.getCapacityKw();
+
+        if (requestedKwh > installationCapacity) {
+            throw new BadRequestException("Allocated kWh (" + requestedKwh + " kWh) cannot exceed Installation capacity (" + installationCapacity + " kW)");
+        }
+
+        // Validate total allocated kWh for the installation does not exceed installation capacity
+        List<Household> existingHouseholds = householdRepository.findByInstallationId(installation.getId());
+        double existingSum = existingHouseholds.stream()
+                .filter(h -> currentHouseholdId == null || !h.getId().equals(currentHouseholdId))
+                .mapToDouble(Household::getAllocatedKwh)
+                .sum();
+
+        if (existingSum + requestedKwh > installationCapacity + 0.0001) {
+            double totalAttempted = Math.round((existingSum + requestedKwh) * 100.0) / 100.0;
+            double currentTotal = Math.round(existingSum * 100.0) / 100.0;
+            throw new BadRequestException("Total allocated capacity (" + totalAttempted + " kWh) cannot exceed Installation capacity (" + installationCapacity + " kW). Currently allocated: " + currentTotal + " kWh");
+        }
+
+        household.setAllocatedKwh(Math.round(requestedKwh * 100.0) / 100.0);
     }
 }

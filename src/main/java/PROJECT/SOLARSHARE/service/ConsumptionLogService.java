@@ -5,11 +5,13 @@ import PROJECT.SOLARSHARE.exception.ResourceNotFoundException;
 import PROJECT.SOLARSHARE.model.ConsumptionLog;
 import PROJECT.SOLARSHARE.model.GenerationLog;
 import PROJECT.SOLARSHARE.model.Household;
+import PROJECT.SOLARSHARE.model.Installation;
 import PROJECT.SOLARSHARE.repository.ConsumptionLogRepository;
 import PROJECT.SOLARSHARE.repository.GenerationLogRepository;
 import PROJECT.SOLARSHARE.repository.HouseholdRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -90,12 +92,33 @@ public class ConsumptionLogService {
         Household household = log.getHousehold();
         GenerationLog generationLog = log.getGenerationLog();
 
-        // Interpret ratio: if > 1.0 (e.g. 40), treat as percentage (0.40)
-        double ratio = household.getAllocationRatio();
-        double effectiveRatio = ratio > 1.0 ? ratio / 100.0 : ratio;
+        if (log.getDate() == null) {
+            throw new BadRequestException("Consumption date is required");
+        }
+        if (log.getDate().isAfter(LocalDate.now())) {
+            throw new BadRequestException("Consumption date cannot be in the future (today: " + LocalDate.now() + ")");
+        }
 
-        // Calculate allocated share
-        double allocatedShare = generationLog.getGeneratedUnits() * effectiveRatio;
+        // Enforce that consumption date must match the generation log date
+        if (generationLog.getDate() != null && !generationLog.getDate().equals(log.getDate())) {
+            throw new BadRequestException("Consumption date (" + log.getDate() + ") must match the Generation Log date (" + generationLog.getDate() + ")");
+        }
+
+        if (log.getUnitsConsumed() == null || log.getUnitsConsumed() < 0) {
+            throw new BadRequestException("Units consumed must be zero or positive");
+        }
+
+        // Check that consumption units do not exceed generated units
+        if (log.getUnitsConsumed() > generationLog.getGeneratedUnits()) {
+            throw new BadRequestException("Consumption units (" + log.getUnitsConsumed() + " kWh) cannot exceed generated units (" + generationLog.getGeneratedUnits() + " kWh)");
+        }
+
+        Installation installation = household.getInstallation() != null ? household.getInstallation() : generationLog.getInstallation();
+        double installationCapacity = (installation != null && installation.getCapacityKw() != null && installation.getCapacityKw() > 0)
+                ? installation.getCapacityKw() : 1.0;
+
+        // Calculate allocated share from household's allocated kWh portion of installation capacity
+        double allocatedShare = generationLog.getGeneratedUnits() * (household.getAllocatedKwh() / installationCapacity);
 
         // RULE 1: Check that total allocated solar units for the generation day does not exceed total generated units
         List<ConsumptionLog> dayLogs = consumptionLogRepository.findByGenerationLogId(generationLog.getId());

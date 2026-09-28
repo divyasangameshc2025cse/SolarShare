@@ -79,7 +79,7 @@ public class WebViewController {
         html.append("<div class='card'>");
         html.append("<h2>Welcome to SOLAR SHARE</h2>");
         html.append("<p>A housing community has a shared rooftop solar installation. The system records daily solar generation, ");
-        html.append("household consumption, allocates common solar generation to households using fixed allocation ratios, ");
+        html.append("household consumption, allocates common solar generation to households based on their allocated capacity (kWh), ");
         html.append("tracks exported units, and shows monthly usage summaries.</p>");
 
 
@@ -225,8 +225,8 @@ public class WebViewController {
         }
         html.append("</select></div>");
 
-        html.append("<div class='form-group'><label for='allocationRatio'>Allocation Ratio (e.g. 0.40 for 40%) *</label>");
-        html.append("<input type='number' step='0.01' id='allocationRatio' name='allocationRatio' value='").append(editItem != null ? editItem.getAllocationRatio() : "").append("' placeholder='e.g. 0.30' required min='0.01' max='1.0'></div>");
+        html.append("<div class='form-group'><label for='allocatedKwh'>Allocated Capacity in kWh *</label>");
+        html.append("<input type='number' step='0.1' id='allocatedKwh' name='allocatedKwh' value='").append(editItem != null ? editItem.getAllocatedKwh() : "").append("' placeholder='e.g. 20.0' required min='0.1'></div>");
         html.append("</div>");
 
         html.append("<div class='btn-group'>");
@@ -237,7 +237,7 @@ public class WebViewController {
         html.append("</div></form>");
 
         html.append("<h3>Registered Households</h3>");
-        html.append("<div class='table-responsive'><table><thead><tr><th>ID</th><th>Household Name</th><th>Installation</th><th>Allocation Ratio</th><th>Actions</th></tr></thead><tbody>");
+        html.append("<div class='table-responsive'><table><thead><tr><th>ID</th><th>Household Name</th><th>Installation</th><th>Allocated (kWh)</th><th>Actions</th></tr></thead><tbody>");
         if (list.isEmpty()) {
             html.append("<tr><td colspan='5'>No households recorded yet.</td></tr>");
         } else {
@@ -245,7 +245,7 @@ public class WebViewController {
                 html.append("<tr><td>").append(h.getId()).append("</td>");
                 html.append("<td><strong>").append(escapeHtml(h.getHouseholdName())).append("</strong></td>");
                 html.append("<td>").append(h.getInstallation() != null ? escapeHtml(h.getInstallation().getName()) : "N/A").append("</td>");
-                html.append("<td>").append(h.getAllocationRatio()).append(" (").append(Math.round(h.getAllocationRatio() * 100)).append("%)</td>");
+                html.append("<td><strong>").append(h.getAllocatedKwh()).append(" kWh</strong></td>");
                 html.append("<td><a href='/households?editId=").append(h.getId()).append("' class='btn btn-green btn-sm'>Edit</a> ");
                 html.append("<a href='/households/delete/").append(h.getId()).append("' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure?\")'>Delete</a></td></tr>");
             }
@@ -260,11 +260,11 @@ public class WebViewController {
     public String saveHousehold(@RequestParam(required = false) Long id,
                                 @RequestParam String householdName,
                                 @RequestParam Long installationId,
-                                @RequestParam Double allocationRatio) {
+                                @RequestParam Double allocatedKwh) {
         try {
             Installation inst = new Installation();
             inst.setId(installationId);
-            Household h = new Household(id, householdName, allocationRatio, inst);
+            Household h = new Household(id, householdName, allocatedKwh, inst);
             if (id != null) {
                 householdService.updateHousehold(id, h);
             } else {
@@ -323,9 +323,10 @@ public class WebViewController {
         }
         html.append("</select></div>");
 
-        String defaultDate = editItem != null && editItem.getDate() != null ? editItem.getDate().toString() : LocalDate.now().toString();
+        String today = LocalDate.now().toString();
+        String defaultDate = editItem != null && editItem.getDate() != null ? editItem.getDate().toString() : today;
         html.append("<div class='form-group'><label for='date'>Date *</label>");
-        html.append("<input type='date' id='date' name='date' value='").append(defaultDate).append("' required></div>");
+        html.append("<input type='date' id='date' name='date' value='").append(defaultDate).append("' max='").append(today).append("' required></div>");
 
         html.append("<div class='form-group'><label for='generatedUnits'>Generated Units (kWh) *</label>");
         html.append("<input type='number' step='0.1' id='generatedUnits' name='generatedUnits' value='").append(editItem != null ? editItem.getGeneratedUnits() : "").append("' placeholder='e.g. 100.0' required min='0'></div>");
@@ -423,7 +424,7 @@ public class WebViewController {
         for (Household h : households) {
             boolean sel = editItem != null && editItem.getHousehold() != null && h.getId().equals(editItem.getHousehold().getId());
             html.append("<option value='").append(h.getId()).append("'").append(sel ? " selected" : "").append(">")
-                .append(escapeHtml(h.getHouseholdName())).append(" (Ratio: ").append(h.getAllocationRatio()).append(")</option>");
+                .append(escapeHtml(h.getHouseholdName())).append(" (").append(h.getAllocatedKwh()).append(" kWh)</option>");
         }
         html.append("</select></div>");
 
@@ -431,15 +432,16 @@ public class WebViewController {
         html.append("<select id='generationLogId' name='generationLogId' required><option value=''>Select Generation Log</option>");
         for (GenerationLog g : genLogs) {
             boolean sel = editItem != null && editItem.getGenerationLog() != null && g.getId().equals(editItem.getGenerationLog().getId());
-            html.append("<option value='").append(g.getId()).append("'").append(sel ? " selected" : "").append(">")
+            html.append("<option value='").append(g.getId()).append("' data-date='").append(g.getDate()).append("'").append(sel ? " selected" : "").append(">")
                 .append("Log #").append(g.getId()).append(": ").append(g.getDate()).append(" (").append(g.getGeneratedUnits()).append(" units - ")
                 .append(g.getInstallation() != null ? escapeHtml(g.getInstallation().getName()) : "").append(")</option>");
         }
         html.append("</select></div>");
 
-        String defaultDate = editItem != null && editItem.getDate() != null ? editItem.getDate().toString() : LocalDate.now().toString();
+        String consToday = LocalDate.now().toString();
+        String defaultDate = editItem != null && editItem.getDate() != null ? editItem.getDate().toString() : consToday;
         html.append("<div class='form-group'><label for='date'>Consumption Date *</label>");
-        html.append("<input type='date' id='date' name='date' value='").append(defaultDate).append("' required></div>");
+        html.append("<input type='date' id='date' name='date' value='").append(defaultDate).append("' max='").append(consToday).append("' required></div>");
 
         html.append("<div class='form-group'><label for='unitsConsumed'>Units Consumed (kWh) *</label>");
         html.append("<input type='number' step='0.1' id='unitsConsumed' name='unitsConsumed' value='").append(editItem != null ? editItem.getUnitsConsumed() : "").append("' placeholder='e.g. 25.0' required min='0'></div>");
@@ -451,6 +453,19 @@ public class WebViewController {
             html.append("<a href='/consumption' class='btn btn-secondary'>Cancel</a>");
         }
         html.append("</div></form>");
+
+        html.append("<script>");
+        html.append("var genSelect = document.getElementById('generationLogId');");
+        html.append("var dateInput = document.getElementById('date');");
+        html.append("if (genSelect && dateInput) {");
+        html.append("  genSelect.addEventListener('change', function() {");
+        html.append("    var opt = genSelect.options[genSelect.selectedIndex];");
+        html.append("    if (opt && opt.dataset.date) {");
+        html.append("      dateInput.value = opt.dataset.date;");
+        html.append("    }");
+        html.append("  });");
+        html.append("}");
+        html.append("</script>");
 
         html.append("<h3>Consumption Logs</h3>");
         html.append("<div class='table-responsive'><table><thead><tr><th>ID</th><th>Household</th><th>Gen Log Day</th><th>Date</th><th>Units Consumed</th><th>Allocated Share</th><th>Actions</th></tr></thead><tbody>");
@@ -521,16 +536,22 @@ public class WebViewController {
     @GetMapping("/summary")
     @ResponseBody
     public String summary(@RequestParam(required = false) Long householdId,
-                          @RequestParam(required = false, defaultValue = "9") Integer month,
-                          @RequestParam(required = false, defaultValue = "2026") Integer year,
+                          @RequestParam(required = false) Integer month,
+                          @RequestParam(required = false) Integer year,
                           @RequestParam(required = false) String msg,
                           @RequestParam(required = false) String error) {
         List<Household> households = householdService.getAllHouseholds();
         Map<String, Object> summaryData = null;
 
+        LocalDate now = LocalDate.now();
+        int currentYear = now.getYear();
+        int currentMonth = now.getMonthValue();
+        int selectedYear = year != null ? year : currentYear;
+        int selectedMonth = month != null ? month : currentMonth;
+
         if (householdId != null) {
             try {
-                summaryData = summaryService.getMonthlySummary(householdId, month, year);
+                summaryData = summaryService.getMonthlySummary(householdId, selectedMonth, selectedYear);
             } catch (Exception ex) {
                 error = ex.getMessage();
             }
@@ -549,7 +570,7 @@ public class WebViewController {
         for (Household h : households) {
             boolean sel = householdId != null && h.getId().equals(householdId);
             html.append("<option value='").append(h.getId()).append("'").append(sel ? " selected" : "").append(">")
-                .append(escapeHtml(h.getHouseholdName())).append(" (Ratio: ").append(h.getAllocationRatio()).append(")</option>");
+                .append(escapeHtml(h.getHouseholdName())).append(" (").append(h.getAllocatedKwh()).append(" kWh)</option>");
         }
         html.append("</select></div>");
 
@@ -557,23 +578,52 @@ public class WebViewController {
         html.append("<select id='month' name='month' required>");
         String[] months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
         for (int i = 1; i <= 12; i++) {
-            boolean sel = (month != null && month == i) || (month == null && i == 9);
+            boolean sel = selectedMonth == i;
             html.append("<option value='").append(i).append("'").append(sel ? " selected" : "").append(">")
                 .append(months[i - 1]).append(" (").append(i).append(")</option>");
         }
         html.append("</select></div>");
 
         html.append("<div class='form-group'><label for='year'>Year *</label>");
-        html.append("<input type='number' id='year' name='year' value='").append(year != null ? year : 2026).append("' required min='2000' max='2100'></div>");
+        html.append("<input type='number' id='year' name='year' value='").append(selectedYear).append("' required min='2000' max='").append(currentYear).append("'></div>");
         html.append("</div>");
 
         html.append("<div class='btn-group'>");
         html.append("<button type='submit' class='btn btn-green'>Get Monthly Summary</button>");
         html.append("</div></form>");
 
+        html.append("<script>");
+        html.append("function validateFutureMonth() {");
+        html.append("  var yearInput = document.getElementById('year');");
+        html.append("  var monthSelect = document.getElementById('month');");
+        html.append("  if (!yearInput || !monthSelect) return;");
+        html.append("  var currentYear = ").append(currentYear).append(";");
+        html.append("  var currentMonth = ").append(currentMonth).append(";");
+        html.append("  var selY = parseInt(yearInput.value, 10);");
+        html.append("  for (var i = 0; i < monthSelect.options.length; i++) {");
+        html.append("    var opt = monthSelect.options[i];");
+        html.append("    var m = parseInt(opt.value, 10);");
+        html.append("    if (selY > currentYear || (selY === currentYear && m > currentMonth)) {");
+        html.append("      opt.disabled = true;");
+        html.append("    } else {");
+        html.append("      opt.disabled = false;");
+        html.append("    }");
+        html.append("  }");
+        html.append("  if (monthSelect.selectedOptions.length && monthSelect.selectedOptions[0].disabled) {");
+        html.append("    monthSelect.value = currentMonth;");
+        html.append("  }");
+        html.append("}");
+        html.append("var yElem = document.getElementById('year');");
+        html.append("if (yElem) {");
+        html.append("  yElem.addEventListener('input', validateFutureMonth);");
+        html.append("  yElem.addEventListener('change', validateFutureMonth);");
+        html.append("  validateFutureMonth();");
+        html.append("}");
+        html.append("</script>");
+
         if (summaryData != null) {
             html.append("<div style='margin-top: 24px;'>");
-            html.append("<h3>Summary Report for ").append(escapeHtml((String) summaryData.get("householdName"))).append(" (").append(month).append("/").append(year).append(")</h3>");
+            html.append("<h3>Summary Report for ").append(escapeHtml((String) summaryData.get("householdName"))).append(" (").append(selectedMonth).append("/").append(selectedYear).append(")</h3>");
 
             html.append("<div class='table-responsive'><table><thead><tr><th>Household</th><th>Allocated Units</th><th>Consumed Units</th></tr></thead><tbody>");
             html.append("<tr><td>").append(escapeHtml((String) summaryData.get("householdName"))).append("</td>");

@@ -48,9 +48,9 @@ class ConsumptionLogServiceTest {
         );
 
         installation = new Installation(1L, "Green Valley", "Building A", 50.0);
-        houseA = new Household(1L, "House A", 0.40, installation);
-        houseB = new Household(2L, "House B", 0.30, installation);
-        houseC = new Household(3L, "House C", 0.30, installation);
+        houseA = new Household(1L, "House A", 20.0, installation); // 20 kWh of 50 kW (40%)
+        houseB = new Household(2L, "House B", 15.0, installation); // 15 kWh of 50 kW (30%)
+        houseC = new Household(3L, "House C", 15.0, installation); // 15 kWh of 50 kW (30%)
 
         genLog = new GenerationLog(1L, LocalDate.of(2026, 9, 28), 100.0, installation);
 
@@ -140,5 +140,43 @@ class ConsumptionLogServiceTest {
         });
 
         assertEquals("Total allocated units cannot exceed generated units", ex.getMessage());
+    }
+
+    @Test
+    void testUnitsConsumedGreaterThanGeneratedUnits_ThrowsBadRequestException() {
+        GenerationLog smallGenLog = new GenerationLog(2L, LocalDate.of(2026, 9, 28), 20.0, installation);
+        when(generationLogRepository.findById(2L)).thenReturn(Optional.of(smallGenLog));
+
+        // Consumed 25.0 > Generated 20.0
+        ConsumptionLog log = new ConsumptionLog();
+        log.setDate(LocalDate.of(2026, 9, 28));
+        log.setUnitsConsumed(25.0);
+        log.setHousehold(houseA);
+        log.setGenerationLog(smallGenLog);
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+            consumptionLogService.createConsumptionLog(log);
+        });
+
+        assertTrue(ex.getMessage().contains("cannot exceed generated units"));
+    }
+
+    @Test
+    void testConsumptionDateMismatch_ThrowsBadRequestException() {
+        // Generation is on Sep 20, but consumption date is Sep 21
+        GenerationLog pastGenLog = new GenerationLog(3L, LocalDate.of(2026, 9, 20), 100.0, installation);
+        when(generationLogRepository.findById(3L)).thenReturn(Optional.of(pastGenLog));
+
+        ConsumptionLog log = new ConsumptionLog();
+        log.setDate(LocalDate.of(2026, 9, 21));
+        log.setUnitsConsumed(10.0);
+        log.setHousehold(houseA);
+        log.setGenerationLog(pastGenLog);
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+            consumptionLogService.createConsumptionLog(log);
+        });
+
+        assertTrue(ex.getMessage().contains("must match the Generation Log date"));
     }
 }

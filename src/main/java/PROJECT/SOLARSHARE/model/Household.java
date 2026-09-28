@@ -16,9 +16,9 @@ public class Household {
     @NotBlank(message = "Household name is required")
     private String householdName;
 
-    @NotNull(message = "Allocation ratio is required")
-    @Positive(message = "Allocation ratio must be positive")
-    private Double allocationRatio;
+    @NotNull(message = "Allocated kWh is required")
+    @Positive(message = "Allocated kWh must be positive")
+    private Double allocatedKwh;
 
     @ManyToOne
     @JoinColumn(name = "installation_id", nullable = false)
@@ -28,10 +28,10 @@ public class Household {
     public Household() {
     }
 
-    public Household(Long id, String householdName, Double allocationRatio, Installation installation) {
+    public Household(Long id, String householdName, Double allocatedKwh, Installation installation) {
         this.id = id;
         this.householdName = householdName;
-        this.allocationRatio = allocationRatio;
+        this.allocatedKwh = allocatedKwh;
         this.installation = installation;
     }
 
@@ -51,12 +51,12 @@ public class Household {
         this.householdName = householdName;
     }
 
-    public Double getAllocationRatio() {
-        return allocationRatio;
+    public Double getAllocatedKwh() {
+        return allocatedKwh;
     }
 
-    public void setAllocationRatio(Double allocationRatio) {
-        this.allocationRatio = allocationRatio;
+    public void setAllocatedKwh(Double allocatedKwh) {
+        this.allocatedKwh = allocatedKwh;
     }
 
     public Installation getInstallation() {

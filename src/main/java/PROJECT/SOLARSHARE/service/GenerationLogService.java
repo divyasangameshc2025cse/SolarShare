@@ -8,6 +8,7 @@ import PROJECT.SOLARSHARE.repository.GenerationLogRepository;
 import PROJECT.SOLARSHARE.repository.InstallationRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -31,6 +32,12 @@ public class GenerationLogService {
     }
 
     public GenerationLog createGenerationLog(GenerationLog generationLog) {
+        if (generationLog.getDate() == null) {
+            throw new BadRequestException("Generation date is required");
+        }
+        if (generationLog.getDate().isAfter(LocalDate.now())) {
+            throw new BadRequestException("Generation date cannot be in the future (today: " + LocalDate.now() + ")");
+        }
         if (generationLog.getInstallation() == null || generationLog.getInstallation().getId() == null) {
             throw new BadRequestException("Installation ID is required for generation log");
         }
@@ -42,7 +49,14 @@ public class GenerationLogService {
 
     public GenerationLog updateGenerationLog(Long id, GenerationLog updatedLog) {
         GenerationLog existing = getGenerationLogById(id);
-        existing.setDate(updatedLog.getDate());
+
+        if (updatedLog.getDate() != null) {
+            if (updatedLog.getDate().isAfter(LocalDate.now())) {
+                throw new BadRequestException("Generation date cannot be in the future (today: " + LocalDate.now() + ")");
+            }
+            existing.setDate(updatedLog.getDate());
+        }
+
         existing.setGeneratedUnits(updatedLog.getGeneratedUnits());
 
         if (updatedLog.getInstallation() != null && updatedLog.getInstallation().getId() != null) {
