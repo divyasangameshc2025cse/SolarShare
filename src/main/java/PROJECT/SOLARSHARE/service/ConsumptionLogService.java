@@ -113,6 +113,14 @@ public class ConsumptionLogService {
             throw new BadRequestException("Consumption units (" + log.getUnitsConsumed() + " kWh) cannot exceed generated units (" + generationLog.getGeneratedUnits() + " kWh)");
         }
 
+        // Enforce that household and generation log belong to the same installation
+        if (household.getInstallation() != null && generationLog.getInstallation() != null &&
+            !household.getInstallation().getId().equals(generationLog.getInstallation().getId())) {
+            throw new BadRequestException("Household '" + household.getHouseholdName() + "' belongs to installation '" +
+                household.getInstallation().getName() + "', but selected generation log is from '" +
+                generationLog.getInstallation().getName() + "'");
+        }
+
         Installation installation = household.getInstallation() != null ? household.getInstallation() : generationLog.getInstallation();
         double installationCapacity = (installation != null && installation.getCapacityKw() != null && installation.getCapacityKw() > 0)
                 ? installation.getCapacityKw() : 1.0;
@@ -120,8 +128,17 @@ public class ConsumptionLogService {
         // Calculate allocated share from household's allocated kWh portion of installation capacity
         double allocatedShare = generationLog.getGeneratedUnits() * (household.getAllocatedKwh() / installationCapacity);
 
-        // RULE 1: Check that total allocated solar units for the generation day does not exceed total generated units
         List<ConsumptionLog> dayLogs = consumptionLogRepository.findByGenerationLogId(generationLog.getId());
+
+        // Prevent duplicate consumption log for the same household on the same generation log
+        boolean alreadyLogged = dayLogs.stream()
+                .anyMatch(l -> (currentLogId == null || !l.getId().equals(currentLogId)) &&
+                               l.getHousehold() != null && l.getHousehold().getId().equals(household.getId()));
+        if (alreadyLogged) {
+            throw new BadRequestException("Household '" + household.getHouseholdName() + "' has already recorded consumption for this generation log (Date: " + generationLog.getDate() + ")");
+        }
+
+        // RULE 1: Check that total allocated solar units for the generation day does not exceed total generated units
         double existingAllocatedSum = dayLogs.stream()
                 .filter(l -> currentLogId == null || !l.getId().equals(currentLogId))
                 .mapToDouble(ConsumptionLog::getAllocatedShare)

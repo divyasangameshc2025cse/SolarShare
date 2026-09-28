@@ -4,6 +4,7 @@ import PROJECT.SOLARSHARE.exception.BadRequestException;
 import PROJECT.SOLARSHARE.exception.ResourceNotFoundException;
 import PROJECT.SOLARSHARE.model.Household;
 import PROJECT.SOLARSHARE.model.Installation;
+import PROJECT.SOLARSHARE.repository.ConsumptionLogRepository;
 import PROJECT.SOLARSHARE.repository.HouseholdRepository;
 import PROJECT.SOLARSHARE.repository.InstallationRepository;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,14 @@ public class HouseholdService {
 
     private final HouseholdRepository householdRepository;
     private final InstallationRepository installationRepository;
+    private final ConsumptionLogRepository consumptionLogRepository;
 
-    public HouseholdService(HouseholdRepository householdRepository, InstallationRepository installationRepository) {
+    public HouseholdService(HouseholdRepository householdRepository,
+                            InstallationRepository installationRepository,
+                            ConsumptionLogRepository consumptionLogRepository) {
         this.householdRepository = householdRepository;
         this.installationRepository = installationRepository;
+        this.consumptionLogRepository = consumptionLogRepository;
     }
 
     public List<Household> getAllHouseholds() {
@@ -62,6 +67,12 @@ public class HouseholdService {
 
     public void deleteHousehold(Long id) {
         Household existing = getHouseholdById(id);
+
+        List<PROJECT.SOLARSHARE.model.ConsumptionLog> logs = consumptionLogRepository.findByHouseholdId(id);
+        if (!logs.isEmpty()) {
+            throw new BadRequestException("Cannot delete household '" + existing.getHouseholdName() + "' because it has " + logs.size() + " consumption log(s). Please delete them first.");
+        }
+
         householdRepository.delete(existing);
     }
 

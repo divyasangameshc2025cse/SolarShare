@@ -179,4 +179,40 @@ class ConsumptionLogServiceTest {
 
         assertTrue(ex.getMessage().contains("must match the Generation Log date"));
     }
+
+    @Test
+    void testDuplicateHouseholdConsumptionLog_ThrowsBadRequestException() {
+        ConsumptionLog existing = new ConsumptionLog(1L, LocalDate.of(2026, 9, 28), 20.0, 40.0, 20.0, houseA, genLog);
+        when(consumptionLogRepository.findByGenerationLogId(1L)).thenReturn(List.of(existing));
+
+        // Attempting to log again for houseA on same generation log
+        ConsumptionLog duplicateLog = new ConsumptionLog();
+        duplicateLog.setDate(LocalDate.of(2026, 9, 28));
+        duplicateLog.setUnitsConsumed(15.0);
+        duplicateLog.setHousehold(houseA);
+        duplicateLog.setGenerationLog(genLog);
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+            consumptionLogService.createConsumptionLog(duplicateLog);
+        });
+        assertTrue(ex.getMessage().contains("already recorded consumption"));
+    }
+
+    @Test
+    void testCrossInstallationMismatch_ThrowsBadRequestException() {
+        Installation inst2 = new Installation(2L, "Plant 2", "Roof 2", 50.0);
+        Household houseOther = new Household(4L, "House Other", 20.0, inst2);
+        when(householdRepository.findById(4L)).thenReturn(Optional.of(houseOther));
+
+        ConsumptionLog log = new ConsumptionLog();
+        log.setDate(LocalDate.of(2026, 9, 28));
+        log.setUnitsConsumed(10.0);
+        log.setHousehold(houseOther); // Belongs to inst2
+        log.setGenerationLog(genLog); // Belongs to installation 1
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+            consumptionLogService.createConsumptionLog(log);
+        });
+        assertTrue(ex.getMessage().contains("belongs to installation"));
+    }
 }

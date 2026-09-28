@@ -4,22 +4,28 @@ import PROJECT.SOLARSHARE.exception.BadRequestException;
 import PROJECT.SOLARSHARE.exception.ResourceNotFoundException;
 import PROJECT.SOLARSHARE.model.GenerationLog;
 import PROJECT.SOLARSHARE.model.Installation;
+import PROJECT.SOLARSHARE.repository.ConsumptionLogRepository;
 import PROJECT.SOLARSHARE.repository.GenerationLogRepository;
 import PROJECT.SOLARSHARE.repository.InstallationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GenerationLogService {
 
     private final GenerationLogRepository generationLogRepository;
     private final InstallationRepository installationRepository;
+    private final ConsumptionLogRepository consumptionLogRepository;
 
-    public GenerationLogService(GenerationLogRepository generationLogRepository, InstallationRepository installationRepository) {
+    public GenerationLogService(GenerationLogRepository generationLogRepository,
+                                  InstallationRepository installationRepository,
+                                  ConsumptionLogRepository consumptionLogRepository) {
         this.generationLogRepository = generationLogRepository;
         this.installationRepository = installationRepository;
+        this.consumptionLogRepository = consumptionLogRepository;
     }
 
     public List<GenerationLog> getAllGenerationLogs() {
@@ -43,6 +49,13 @@ public class GenerationLogService {
         }
         Installation installation = installationRepository.findById(generationLog.getInstallation().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Installation not found with id: " + generationLog.getInstallation().getId()));
+
+        // Prevent duplicate generation log for same installation and date
+        Optional<GenerationLog> existingDuplicate = generationLogRepository.findByInstallationIdAndDate(installation.getId(), generationLog.getDate());
+        if (existingDuplicate.isPresent()) {
+            throw new BadRequestException("A generation log already exists for installation '" + installation.getName() + "' on date " + generationLog.getDate());
+        }
+
         generationLog.setInstallation(installation);
         return generationLogRepository.save(generationLog);
     }
@@ -50,26 +63,38 @@ public class GenerationLogService {
     public GenerationLog updateGenerationLog(Long id, GenerationLog updatedLog) {
         GenerationLog existing = getGenerationLogById(id);
 
-        if (updatedLog.getDate() != null) {
-            if (updatedLog.getDate().isAfter(LocalDate.now())) {
-                throw new BadRequestException("Generation date cannot be in the future (today: " + LocalDate.now() + ")");
-            }
-            existing.setDate(updatedLog.getDate());
+        LocalDate targetDate = updatedLog.getDate() != null ? updatedLog.getDate() : existing.getDate();
+        if (targetDate.isAfter(LocalDate.now())) {
+            throw new BadRequestException("Generation date cannot be in the future (today: " + LocalDate.now() + ")");
         }
 
-        existing.setGeneratedUnits(updatedLog.getGeneratedUnits());
-
+        Installation targetInstallation = existing.getInstallation();
         if (updatedLog.getInstallation() != null && updatedLog.getInstallation().getId() != null) {
-            Installation installation = installationRepository.findById(updatedLog.getInstallation().getId())
+            targetInstallation = installationRepository.findById(updatedLog.getInstallation().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Installation not found with id: " + updatedLog.getInstallation().getId()));
-            existing.setInstallation(installation);
         }
+
+        // Prevent duplicate generation log for same installation and date
+        Optional<GenerationLog> duplicate = generationLogRepository.findByInstallationIdAndDate(targetInstallation.getId(), targetDate);
+        if (duplicate.isPresent() && !duplicate.get().getId().equals(id)) {
+            throw new BadRequestException("A generation log already exists for installation '" + targetInstallation.getName() + "' on date " + targetDate);
+        }
+
+        existing.setDate(targetDate);
+        existing.setGeneratedUnits(updatedLog.getGeneratedUnits());
+        existing.setInstallation(targetInstallation);
 
         return generationLogRepository.save(existing);
     }
 
     public void deleteGenerationLog(Long id) {
         GenerationLog existing = getGenerationLogById(id);
+
+        List<PROJECT.SOLARSHARE.model.ConsumptionLog> linkedLogs = consumptionLogRepository.findByGenerationLogId(id);
+        if (!linkedLogs.isEmpty()) {
+            throw new BadRequestException("Cannot delete Generation Log #" + id + " because it has " + linkedLogs.size() + " consumption log(s) linked to it. Please delete them first.");
+        }
+
         generationLogRepository.delete(existing);
     }
 }

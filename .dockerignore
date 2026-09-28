@@ -1,0 +1,11 @@
+target/
+.git
+.gitignore
+.mvn
+mvnw
+mvnw.cmd
+HELP.md
+promt.txt
+*.log
+.idea
+.vscode
