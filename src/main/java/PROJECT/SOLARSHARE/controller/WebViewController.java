@@ -60,7 +60,7 @@ public class WebViewController {
     }
 
     private String getFooter() {
-        return "</div><footer><p>SOLAR SHARE &copy; 2026 – Community Rooftop Solar Usage Tracker</p></footer></body></html>";
+        return "</div></body></html>";
     }
 
     // ==========================================
