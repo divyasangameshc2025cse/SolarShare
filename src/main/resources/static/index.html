@@ -40,15 +40,6 @@
                     tracks exported units, and shows monthly usage summaries.
                 </p>
 
-                <div class="note-box" style="margin-top: 15px;">
-                    <strong>Core Business Rules:</strong>
-                    <ul style="margin-left: 20px; margin-top: 6px;">
-                        <li><strong>Rule 1:</strong> Total allocated solar units on any generation day must never exceed
-                            total generated units.</li>
-                        <li><strong>Rule 2:</strong> Household exported units =
-                            <code>max(allocatedShare - unitsConsumed, 0)</code>. Never negative.</li>
-                    </ul>
-                </div>
 
                 <h3>Quick Overview</h3>
                 <div class="summary-stats">
@@ -232,12 +223,6 @@
         <div id="section-consumption" class="section">
             <div class="card">
                 <h2>Log Household Electricity Consumption</h2>
-                <div class="note-box">
-                    <strong>Automatic Calculation:</strong> When saving, the system calculates allocated share =
-                    <code>Generated Units &times; Household Ratio</code> and exported units =
-                    <code>max(Allocated - Consumed, 0)</code> while checking that total allocated units do not exceed
-                    generated units.
-                </div>
                 <form id="consumption-form" onsubmit="handleConsumptionSubmit(event)">
                     <input type="hidden" id="cons-id">
                     <div class="form-grid">

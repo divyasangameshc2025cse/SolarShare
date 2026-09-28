@@ -82,12 +82,6 @@ public class WebViewController {
         html.append("household consumption, allocates common solar generation to households using fixed allocation ratios, ");
         html.append("tracks exported units, and shows monthly usage summaries.</p>");
 
-        html.append("<div class='note-box' style='margin-top:15px;'>");
-        html.append("<strong>Core Business Rules:</strong>");
-        html.append("<ul style='margin-left: 20px; margin-top: 6px;'>");
-        html.append("<li><strong>Rule 1:</strong> Total allocated solar units on any generation day must never exceed total generated units.</li>");
-        html.append("<li><strong>Rule 2:</strong> Household exported units = <code>max(allocatedShare - unitsConsumed, 0)</code>. Never negative.</li>");
-        html.append("</ul></div>");
 
         html.append("<h3>Quick Overview</h3>");
         html.append("<div class='summary-stats'>");
@@ -417,12 +411,6 @@ public class WebViewController {
         html.append("<div class='card'>");
         html.append("<h2>").append(editItem != null ? "Edit Consumption Log" : "Log Household Electricity Consumption").append("</h2>");
 
-        html.append("<div class='note-box'>");
-        html.append("<strong>Automatic Calculation & Business Rules:</strong><br>");
-        html.append("&bull; Allocated share = <code>Generated Units &times; Household Ratio</code><br>");
-        html.append("&bull; Exported units = <code>max(Allocated - Consumed, 0)</code><br>");
-        html.append("&bull; Rule 1: Total allocated units on a day cannot exceed generated units.");
-        html.append("</div>");
 
         html.append("<form method='POST' action='/consumption/save'>");
         if (editItem != null) {
