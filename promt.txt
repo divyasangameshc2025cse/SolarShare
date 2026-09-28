@@ -1,0 +1,49 @@
+Solar Share - Community Rooftop Solar Usage Tracker
+
+Scenario: A housing community with a shared rooftop solar installation has no fair way to record this generated energy of each household consumers and export back
+Core features :
+=> Log daily total solar usage for installation
+=>log each household unit consumed for the day
+=>compute each household  share of common generation on fixed allocation ratio
+=>track the units exported back to the grid per house hold
+=>view a monthly net usage summary per household
+
+DB design :
+Entities- (Installation, Generation Log, Household, Consumption Log)-----model the relationship
+business rules must enforce:
+=>total allocated shares to households must never exceed with total units generated for that day
+=> A household net units exported is generated share minus consumption , floored at zero
+
+Approach Build:
+=>spring boot ,Spring web , maven , Spring data jpa , validation , mysql
+=> Installation, Generation Log, Household, Consumption Log ---->relationship
+=>create a jpa repository for each entity
+=>rest controller (GET, POST, PUT, DELETE)
+=>input validation eg.@notnull,@positive ,,exception handler (@ControllerAdvise ) so bad requst return clear error message
+=>test the every endpoint in postman , covering normal path and edge cases in business rules 
+
+
+
+
+
+
+                    SOLAR SHARE
+                         │
+                  Spring Boot API
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+     REST Controller               Exception Handler
+          │
+       Service Layer
+          │
+     ┌────┴───────────┐
+     │                │
+   JPA              JDBC
+     │                │
+     ▼                ▼
+Repositories      JdbcTemplate
+     │                │
+     └────────┬───────┘
+              ▼
+            MySQL
