@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLAR SHARE – Community Rooftop Solar Usage Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>SOLAR SHARE</h1>
+        <p>Community Rooftop Solar Usage Tracker</p>
+    </header>
+
+    <nav>
+        <button id="nav-home" class="active" onclick="showSection('home')">Home</button>
+        <button id="nav-installation" onclick="showSection('installation')">Installation</button>
+        <button id="nav-households" onclick="showSection('households')">Households</button>
+        <button id="nav-generation" onclick="showSection('generation')">Generation</button>
+        <button id="nav-consumption" onclick="showSection('consumption')">Consumption</button>
+        <button id="nav-summary" onclick="showSection('summary')">Monthly Summary</button>
+    </nav>
+
+    <div class="container">
+        <!-- Global message alert -->
+        <div id="alert-box" class="alert"></div>
+
+        <!-- 1. HOME SECTION -->
+        <div id="section-home" class="section active">
+            <div class="card">
+                <h2>Welcome to SOLAR SHARE</h2>
+                <p>
+                    A housing community has a shared rooftop solar installation. The system records daily solar
+                    generation,
+                    household consumption, allocates common solar generation to households using fixed allocation
+                    ratios,
+                    tracks exported units, and shows monthly usage summaries.
+                </p>
+
+                <div class="note-box" style="margin-top: 15px;">
+                    <strong>Core Business Rules:</strong>
+                    <ul style="margin-left: 20px; margin-top: 6px;">
+                        <li><strong>Rule 1:</strong> Total allocated solar units on any generation day must never exceed
+                            total generated units.</li>
+                        <li><strong>Rule 2:</strong> Household exported units =
+                            <code>max(allocatedShare - unitsConsumed, 0)</code>. Never negative.</li>
+                    </ul>
+                </div>
+
+                <h3>Quick Overview</h3>
+                <div class="summary-stats">
+                    <div class="stat-box">
+                        <div class="stat-title">Total Installations</div>
+                        <div class="stat-value" id="stat-installations">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Total Households</div>
+                        <div class="stat-value" id="stat-households">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Generation Logs</div>
+                        <div class="stat-value" id="stat-generation">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">Consumption Logs</div>
+                        <div class="stat-value" id="stat-consumption">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. INSTALLATION SECTION -->
+        <div id="section-installation" class="section">
+            <div class="card">
+                <h2>Manage Rooftop Solar Installation</h2>
+                <form id="installation-form" onsubmit="handleInstallationSubmit(event)">
+                    <input type="hidden" id="inst-id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="inst-name">Installation Name *</label>
+                            <input type="text" id="inst-name" placeholder="e.g. Green Valley Solar" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inst-location">Location *</label>
+                            <input type="text" id="inst-location" placeholder="e.g. Building Block A Rooftop" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inst-capacity">Capacity in kW *</label>
+                            <input type="number" step="0.1" id="inst-capacity" placeholder="e.g. 50.0" required
+                                min="0.1">
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" id="inst-submit-btn" class="btn btn-green">Add Installation</button>
+                        <button type="button" id="inst-cancel-btn" class="btn btn-secondary"
+                            onclick="resetInstallationForm()" style="display:none;">Cancel</button>
+                    </div>
+                </form>
+
+                <h3>Existing Installations</h3>
+                <div class="table-responsive">
+                    <table id="installation-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>Capacity (kW)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="installation-table-body">
+                            <tr>
+                                <td colspan="5">No installations recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. HOUSEHOLDS SECTION -->
+        <div id="section-households" class="section">
+            <div class="card">
+                <h2>Manage Households</h2>
+                <form id="household-form" onsubmit="handleHouseholdSubmit(event)">
+                    <input type="hidden" id="house-id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="house-name">Household Name *</label>
+                            <input type="text" id="house-name" placeholder="e.g. Flat 101 - Sharma" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="house-inst">Installation *</label>
+                            <select id="house-inst" required>
+                                <option value="">Select Installation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="house-ratio">Allocation Ratio (e.g. 0.40 for 40%) *</label>
+                            <input type="number" step="0.01" id="house-ratio" placeholder="e.g. 0.30" required
+                                min="0.01" max="1.0">
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" id="house-submit-btn" class="btn btn-green">Add Household</button>
+                        <button type="button" id="house-cancel-btn" class="btn btn-secondary"
+                            onclick="resetHouseholdForm()" style="display:none;">Cancel</button>
+                    </div>
+                </form>
+
+                <h3>Registered Households</h3>
+                <div class="table-responsive">
+                    <table id="household-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Household Name</th>
+                                <th>Installation</th>
+                                <th>Allocation Ratio</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="household-table-body">
+                            <tr>
+                                <td colspan="5">No households recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. GENERATION SECTION -->
+        <div id="section-generation" class="section">
+            <div class="card">
+                <h2>Log Daily Solar Generation</h2>
+                <form id="generation-form" onsubmit="handleGenerationSubmit(event)">
+                    <input type="hidden" id="gen-id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="gen-inst">Installation *</label>
+                            <select id="gen-inst" required>
+                                <option value="">Select Installation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="gen-date">Date *</label>
+                            <input type="date" id="gen-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gen-units">Generated Units (kWh) *</label>
+                            <input type="number" step="0.1" id="gen-units" placeholder="e.g. 100.0" required min="0">
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" id="gen-submit-btn" class="btn btn-green">Add Generation Log</button>
+                        <button type="button" id="gen-cancel-btn" class="btn btn-secondary"
+                            onclick="resetGenerationForm()" style="display:none;">Cancel</button>
+                    </div>
+                </form>
+
+                <h3>Daily Generation Logs</h3>
+                <div class="table-responsive">
+                    <table id="generation-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Installation</th>
+                                <th>Date</th>
+                                <th>Generated Units</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="generation-table-body">
+                            <tr>
+                                <td colspan="5">No generation logs recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. CONSUMPTION SECTION -->
+        <div id="section-consumption" class="section">
+            <div class="card">
+                <h2>Log Household Electricity Consumption</h2>
+                <div class="note-box">
+                    <strong>Automatic Calculation:</strong> When saving, the system calculates allocated share =
+                    <code>Generated Units &times; Household Ratio</code> and exported units =
+                    <code>max(Allocated - Consumed, 0)</code> while checking that total allocated units do not exceed
+                    generated units.
+                </div>
+                <form id="consumption-form" onsubmit="handleConsumptionSubmit(event)">
+                    <input type="hidden" id="cons-id">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cons-house">Household *</label>
+                            <select id="cons-house" required>
+                                <option value="">Select Household</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cons-gen">Generation Day *</label>
+                            <select id="cons-gen" required>
+                                <option value="">Select Generation Log</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cons-date">Consumption Date *</label>
+                            <input type="date" id="cons-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cons-units">Units Consumed (kWh) *</label>
+                            <input type="number" step="0.1" id="cons-units" placeholder="e.g. 25.0" required min="0">
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" id="cons-submit-btn" class="btn btn-green">Save Consumption Log</button>
+                        <button type="button" id="cons-cancel-btn" class="btn btn-secondary"
+                            onclick="resetConsumptionForm()" style="display:none;">Cancel</button>
+                    </div>
+                </form>
+
+                <h3>Consumption Logs</h3>
+                <div class="table-responsive">
+                    <table id="consumption-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Household</th>
+                                <th>Gen Log Day</th>
+                                <th>Date</th>
+                                <th>Units Consumed</th>
+                                <th>Allocated Share</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="consumption-table-body">
+                            <tr>
+                                <td colspan="7">No consumption logs recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. MONTHLY SUMMARY SECTION -->
+        <div id="section-summary" class="section">
+            <div class="card">
+                <h2>Monthly Net Usage Summary</h2>
+                <form id="summary-form" onsubmit="handleSummarySubmit(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="summary-house">Select Household *</label>
+                            <select id="summary-house" required>
+                                <option value="">Select Household</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="summary-month">Month *</label>
+                            <select id="summary-month" required>
+                                <option value="1">January (1)</option>
+                                <option value="2">February (2)</option>
+                                <option value="3">March (3)</option>
+                                <option value="4">April (4)</option>
+                                <option value="5">May (5)</option>
+                                <option value="6">June (6)</option>
+                                <option value="7">July (7)</option>
+                                <option value="8">August (8)</option>
+                                <option value="9" selected>September (9)</option>
+                                <option value="10">October (10)</option>
+                                <option value="11">November (11)</option>
+                                <option value="12">December (12)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="summary-year">Year *</label>
+                            <input type="number" id="summary-year" value="2026" required min="2000" max="2100">
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-green">Get Monthly Summary</button>
+                    </div>
+                </form>
+
+                <div id="summary-result-container" style="display: none; margin-top: 24px;">
+                    <h3>Summary Report</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Household</th>
+                                    <th>Allocated Units</th>
+                                    <th>Consumed Units</th>
+                                    <th>Exported Units</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="res-household-name">-</td>
+                                    <td id="res-allocated-units">-</td>
+                                    <td id="res-consumed-units">-</td>
+                                    <td id="res-exported-units">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="summary-stats">
+                        <div class="stat-box">
+                            <div class="stat-title">Total Allocated Share</div>
+                            <div class="stat-value" id="card-allocated">0.0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-title">Total Consumed Units</div>
+                            <div class="stat-value" id="card-consumed">0.0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-title">Total Exported Units</div>
+                            <div class="stat-value" id="card-exported">0.0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>SOLAR SHARE &copy; 2026 – Community Rooftop Solar Usage Tracker </p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

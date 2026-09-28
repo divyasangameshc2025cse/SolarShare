@@ -1,0 +1,272 @@
+/* Simple Light CSS for College Project */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #ffffff;
+    color: #333333;
+    line-height: 1.5;
+    padding-bottom: 40px;
+}
+
+/* Header & Navigation */
+header {
+    background-color: #2e7d32;
+    color: #ffffff;
+    padding: 16px 24px;
+    border-bottom: 3px solid #1b5e20;
+}
+
+header h1 {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+header p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+nav {
+    background-color: #f1f8e9;
+    border-bottom: 1px solid #c8e6c9;
+    padding: 10px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+nav a {
+    text-decoration: none;
+    background-color: transparent;
+    border: 1px solid #81c784;
+    color: #2e7d32;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+nav a:hover, nav a.active {
+    background-color: #2e7d32;
+    color: #ffffff;
+}
+
+/* Main Container */
+.container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 16px;
+}
+
+/* Alert / Notification box */
+.alert {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.alert-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+
+.alert-error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+
+/* Cards */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    color: #2e7d32;
+    font-size: 20px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #e8f5e9;
+    padding-bottom: 6px;
+}
+
+.card h3 {
+    color: #388e3c;
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+/* Forms */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #444;
+}
+
+.form-group input,
+.form-group select {
+    padding: 8px 10px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #2e7d32;
+    outline: none;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+button.btn, a.btn {
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-green {
+    background-color: #2e7d32;
+    color: #ffffff;
+}
+
+.btn-green:hover {
+    background-color: #1b5e20;
+}
+
+.btn-secondary {
+    background-color: #757575;
+    color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background-color: #616161;
+}
+
+.btn-danger {
+    background-color: #c62828;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background-color: #b71c1c;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+    margin-top: 14px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+table th, table td {
+    border: 1px solid #dddddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+table th {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+table tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+table tr:hover {
+    background-color: #f1f8e9;
+}
+
+/* Summary stats display */
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.stat-box {
+    background-color: #f1f8e9;
+    border: 1px solid #c8e6c9;
+    border-radius: 4px;
+    padding: 14px;
+    text-align: center;
+}
+
+.stat-box .stat-title {
+    font-size: 13px;
+    color: #555555;
+    margin-bottom: 6px;
+}
+
+.stat-box .stat-value {
+    font-size: 22px;
+    font-weight: bold;
+    color: #2e7d32;
+}
+
+/* Business rules helper note */
+.note-box {
+    background-color: #fffde7;
+    border-left: 4px solid #fbc02d;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+footer {
+    text-align: center;
+    font-size: 13px;
+    color: #777777;
+    margin-top: 40px;
+    border-top: 1px solid #eeeeee;
+    padding-top: 16px;
+}
