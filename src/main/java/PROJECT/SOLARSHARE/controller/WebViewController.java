@@ -575,17 +575,15 @@ public class WebViewController {
             html.append("<div style='margin-top: 24px;'>");
             html.append("<h3>Summary Report for ").append(escapeHtml((String) summaryData.get("householdName"))).append(" (").append(month).append("/").append(year).append(")</h3>");
 
-            html.append("<div class='table-responsive'><table><thead><tr><th>Household</th><th>Allocated Units</th><th>Consumed Units</th><th>Exported Units</th></tr></thead><tbody>");
+            html.append("<div class='table-responsive'><table><thead><tr><th>Household</th><th>Allocated Units</th><th>Consumed Units</th></tr></thead><tbody>");
             html.append("<tr><td>").append(escapeHtml((String) summaryData.get("householdName"))).append("</td>");
             html.append("<td style='color:#2e7d32; font-weight:bold;'>").append(summaryData.get("totalAllocatedUnits")).append(" units</td>");
-            html.append("<td>").append(summaryData.get("totalConsumedUnits")).append(" units</td>");
-            html.append("<td style='color:#1565c0; font-weight:bold;'>").append(summaryData.get("totalExportedUnits")).append(" units</td></tr>");
+            html.append("<td>").append(summaryData.get("totalConsumedUnits")).append(" units</td></tr>");
             html.append("</tbody></table></div>");
 
             html.append("<div class='summary-stats'>");
             html.append("<div class='stat-box'><div class='stat-title'>Total Allocated Share</div><div class='stat-value'>").append(summaryData.get("totalAllocatedUnits")).append("</div></div>");
             html.append("<div class='stat-box'><div class='stat-title'>Total Consumed Units</div><div class='stat-value'>").append(summaryData.get("totalConsumedUnits")).append("</div></div>");
-            html.append("<div class='stat-box'><div class='stat-title'>Total Exported Units</div><div class='stat-value'>").append(summaryData.get("totalExportedUnits")).append("</div></div>");
             html.append("</div></div>");
         }
 
